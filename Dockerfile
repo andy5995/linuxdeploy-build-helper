@@ -17,7 +17,7 @@ RUN \
     ninja && ninja install linuxdeploy && cd .. && \
     rm -rf linuxdeploy
 RUN \
-  git clone --depth 1 --branch 1-alpha-20230713-1 https://github.com/linuxdeploy/linuxdeploy-plugin-appimage --recurse-submodules && \
+  git clone --depth 1 --branch 2.0.0-alpha-1-20241106 https://github.com/linuxdeploy/linuxdeploy-plugin-appimage --recurse-submodules && \
     cd linuxdeploy-plugin-appimage && \
     cmake . -G Ninja -DCMAKE_INSTALL_PREFIX=$HOME/.local && ninja && ninja install && cd .. && \
     rm -rf linuxdeploy-plugin-appimage
