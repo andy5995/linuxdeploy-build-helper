@@ -64,7 +64,7 @@ USER builder
 WORKDIR /home/builder
 RUN \
   git clone \
-    --branch 1-alpha-20240109-1 \
+    --branch 2.0.0-alpha-1-20241106 \
     --depth 1 \
     https://github.com/linuxdeploy/linuxdeploy-plugin-qt \
     --recurse-submodules && \
