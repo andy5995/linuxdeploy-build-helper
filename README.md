@@ -17,63 +17,49 @@ version Ubuntu.
 
 (The appimage plugin doesn't yet support 'ppc64le' or 's390x')
 
-## Example usage
+## Usage
 
-    docker run -t \
-    --rm \
-    -e HOSTUID=$(id -u) \
-    -e VERSION=test \
-    -v $PWD:/workspace \
-    -w /workspace \
-    andy5995/linuxdeploy:v2-focal packaging/appimage/pre-appimage.sh
+Make a `docker` sub-directory within your project and copy `.env` and
+`docker-compose.yml` to it. Add custom variables to suit your needs. Add your
+numeric user and group id to the corresponding variables in `.env`. You can
+find them by using:
+
+    id -u
+    id -g
+
+To build the AppImage:
+
+    docker-compose -f docker/docker-compose.yml --rm build
 
 This is meant to be run from the source root of your project. Using the
 command above, your current directory will be mounted in the container at
 `/workspace`.
+
+You can see an example of an AppImage build script at
+[rmw/packaging/appimage/pre-appimage.sh](https://github.com/theimpossibleastronaut/rmw/blob/master/packaging/appimage/pre-appimage.sh).
+Add the `/path/to/script` in your custom `.env` file.
 
 When the container starts, 'root' changes the UID of user 'builder' (a user
 created during the build of the Dockerfile) to HOSTUID. This allows builder to
 build your project and create the AppImage without root privileges (the
 resulting files will be owned by you).
 
-The only argument given after the name of the docker image in the `docker run`
-command is the path/name of the script that builds your projects and includes
-the command to call linuxdeploy. You can see an example at
-[rmw/packaging/appimage/pre-appimage.sh](https://github.com/theimpossibleastronaut/rmw/blob/master/packaging/appimage/pre-appimage.sh).
-
 You may use `sudo` in your script to install packages or do other things.
 
 If you would like to look around the container, you can use
 
-    docker run -it --rm --entrypoint sh andy5995/linuxdeploy:v2-focal
+    docker run -it --rm --entrypoint bash andy5995/linuxdeploy:v2-focal
 
 ## Locally
-
-If you want to clean your project build directory, you can add `-e
-CLEAN_BUILD=true` to the `docker run` arguments, and use something like this
-in your script:
-
-```sh
-# Clean build directory if specified and it exists
-if [ "$CLEAN_BUILD" = "true" ] && [ -d "$BUILD_DIR" ]; then
-  rm -rf "$BUILD_DIR"
-fi
-
-# Setup project for building, run ./configure, ./autogen.sh, cmake, etc
-if [ ! -d "$BUILD_DIR" ]; then
-  meson setup "$BUILD_DIR" \
-    -Dbuildtype=release \
-    -Dstrip=true \
-    -Db_sanitize=none \
-    -Dprefix=/usr
-fi
-```
 
 To build for other architectures, you may need to use qemu with docker. There
 may be other ways, but you can check out [this
 document](https://www.stereolabs.com/docs/docker/building-arm-container-on-x86)
-for starters. If you are set up to build on other architectures, add
-`--platform=linux/<arch>` to the `docker run` arguments.
+for starters. If you are set up to build on other architectures, edit the
+**PLATFORM** variable in docker-compose.yml, or export it when running
+`docker-compose`:
+
+    PLATFORM=linux/arm64 docker-compose ...
 
 ## In a GitHub Runner
 
