@@ -1,3 +1,7 @@
+2024-11-23
+
+  * Improve (and fix) entrypoint.sh
+
 2024-02-12
 
   * Convert Action to a container
