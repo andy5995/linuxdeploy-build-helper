@@ -25,6 +25,7 @@ if [ -z "$1" ]; then
 fi
 
 usermod -u "$HOSTUID" builder
+groupmod -g "$HOSTGID" builder
 chown -R "$HOSTUID:$HOSTGID" /home/builder
 
 # The docs state to use '-w /workdir when running the container, but switching

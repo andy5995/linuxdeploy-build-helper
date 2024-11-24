@@ -8,12 +8,14 @@ on:
   push:
     branches: trunk
     paths:
-    - 'action.yml'
+    - '.env'
+    - 'docker-compose.yml'
     - '**test.yml'
   pull_request:
     branches: trunk
     paths:
-    - 'action.yml'
+    - '.env'
+    - 'docker-compose.yml'
     - '**test.yml'
 
 env:
@@ -27,8 +29,6 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-          - linux/arm/v7
-
     steps:
       - name: Checkout rmw
         uses: actions/checkout@v4
@@ -44,16 +44,24 @@ jobs:
             echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
 
+      - name: Install docker-compose
+        run: |
+          #sudo apt update
+          #sudo apt upgrade -y
+          sudo apt install -y docker-compose
+
+      - name: Checkout rmw
+        uses: actions/checkout@v4
+        with:
+          path: _linuxdeploy_test
+
       - name: Build AppImage
         run: |
-          docker run -t \
-            --rm \
-            --platform=${{ matrix.platform }} \
-            -e HOSTUID=$(id -u) \
-            -e VERSION \
-            -v $GITHUB_WORKSPACE:/workspace \
-            -w /workspace \
-            andy5995/linuxdeploy:v2-focal packaging/appimage/pre-appimage.sh
+          export HOSTUID=$(id -u) HOSTGID=$(id -g)
+          docker-compose -f _linuxdeploy_test/docker-compose.yml run --rm build
+        env:
+          SCRIPT: 'packaging/appimage/pre-appimage.sh'
+          PLATFORM: ${{ matrix.platform }}
 
       - name: Create sha256sum
         run: |
@@ -68,57 +76,3 @@ jobs:
           name: ${{ env.IMAGE_FILENAME }}
           path: ./out/*
           if-no-files-found: error
-
-  #test-netpanzer:
-    #runs-on: ubuntu-latest
-    #strategy:
-      #matrix:
-        #platform: [amd64]
-    #steps:
-      #- name: Checkout
-        #uses: actions/checkout@v4
-      #- name: Checkout netpanzer
-        #uses: actions/checkout@v4
-        #with:
-          #repository: netpanzer/netpanzer
-          #path: netpanzer
-      #- name: Use action from self
-        #uses: ./
-        #with:
-          #platform: ${{ matrix.platform }}
-          #pre_appimage_script: rmw/packaging/appimage/pre
-            #sudo apt install -y \
-              #gettext \
-              #liblua5.1-0-dev \
-              #libphysfs-dev \
-              #libsdl2-dev \
-              #libsdl2-mixer-dev \
-              #libsdl2-ttf-dev
-          #build_commands: |
-            #git clone --depth 1 https://github.com/netpanzer/netpanzer
-            #cd netpanzer
-            #meson setup _build -Dprefix=/usr
-            #cd _build
-            #ninja
-          #install_to_appdir_commands: |
-            #meson install --destdir=$APPDIR --skip-subprojects
-          #linuxdeploy_output_version: $VERSION
-          #linuxdeploy_args: |
-            #-d netpanzer/support/win32/netpanzer.desktop \
-            #--custom-apprun=netpanzer/support/appimage/AppRun \
-            #--icon-file=netpanzer/netpanzer.png \
-            #--icon-filename=netpanzer \
-            #--executable $APPDIR/usr/bin/netpanzer \
-            #--output appimage
-
-      #- name: Create sha256sum
-        #run: |
-          #cd out
-          #sha256sum $IMAGE_FILENAME > $IMAGE_FILENAME.sha256sum
-
-      #- name: Upload AppImage
-        #uses: actions/upload-artifact@v4
-        #with:
-          #name: ${{ env.IMAGE_FILENAME }}
-          #path: ./out/*
-          #if-no-files-found: error
