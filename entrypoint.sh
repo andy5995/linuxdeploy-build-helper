@@ -29,4 +29,4 @@ chown -R "$HOSTUID:$HOSTGID" /home/builder
 
 # The docs state to use '-w /workdir when running the container, but switching
 # to builder here will change the directory. Using cd to change back...
-su builder -l -c "cd $OLDPWD && $1"
+su builder -c "cd $OLDPWD && . ~/.profile && $1"
