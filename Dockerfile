@@ -24,18 +24,11 @@ RUN \
 
 ARG CODENAME
 RUN \
-  git clone --depth 1 --branch 13 https://github.com/AppImage/AppImageKit --recurse-submodules && \
-  cd AppImageKit && \
-  sed -i 's/4\.4/4.5/g' cmake/dependencies.cmake && \
-  cmake . \
-    -DCMAKE_INSTALL_PREFIX=$HOME/.local \
-    -DBUILD_TESTING=OFF && \
-  if [ "$CODENAME" = "jammy" ];then \
-    make -j $(nproc) || sleep 5s && make clean; \
-    sed -i 's/CPPFLAGS="\(.*\)"/CPPFLAGS="\1 -fcommon"/' ./lib/libappimage/squashfuse-EXTERNAL-prefix/src/squashfuse-EXTERNAL/m4/squashfuse.m4; \
-  fi && \
-  make -j $(nproc) && make install && \
-  cd .. && rm -rf AppImageKit
+  git clone --depth 1 https://github.com/AppImage/appimagetool.git && \
+  cd appimagetool && \
+  cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
+  make install && \
+  cd .. && rm -rf appimagetool
 
 WORKDIR /home/builder/.local/bin
 RUN \
