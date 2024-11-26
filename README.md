@@ -29,7 +29,7 @@ find them by using:
 
 To build the AppImage:
 
-    docker-compose -f docker/docker-compose.yml --rm build
+    docker-compose -f docker/docker-compose.yml run --rm build
 
 This is meant to be run from the source root of your project. Using the
 command above, your current directory will be mounted in the container at
