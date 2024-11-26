@@ -30,7 +30,7 @@ jobs:
         codename:
           - focal
           - jammy
-      fail-fast: false
+      fail-fast: true
     steps:
       -
         name: Prepare
@@ -151,7 +151,7 @@ jobs:
           - focal
           - jammy
 
-      fail-fast: true
+      fail-fast: false
     steps:
       -
         name: Prepare
