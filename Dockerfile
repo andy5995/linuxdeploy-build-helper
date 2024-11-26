@@ -31,6 +31,7 @@ RUN \
   cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
   make install && \
   sudo apt install -y libzstd-dev && \
+  sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
   sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
   cd .. && rm -rf appimagetool
 
