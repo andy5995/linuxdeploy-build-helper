@@ -59,7 +59,19 @@ for starters. If you are set up to build on other architectures, edit the
 **PLATFORM** variable in docker-compose.yml, or export it when running
 `docker-compose`:
 
-    PLATFORM=linux/arm64 docker-compose ...
+    PLATFORM=linux/arm64 docker-compose -f docker/docker-compose.yml pull build
+
+To pull the image for the corresponding architecture. Then run
+`docker-compose` by preceding it again with the PLATFORM variable:
+
+    PLATFORM=linux/arm64 docker-compose -f docker/docker-compose.yml run --rm build
+
+Alternatively, you can export the variable:
+
+    export PLATFORM=linux/arm64
+
+And then run the `docker-compose` commands without preceding them with the
+variable.
 
 ## In a GitHub Runner
 
