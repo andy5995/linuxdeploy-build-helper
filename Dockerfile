@@ -24,10 +24,14 @@ RUN \
 
 ARG CODENAME
 RUN \
-  git clone --depth 1 https://github.com/AppImage/appimagetool.git && \
+  git clone --depth 1 --branch main https://github.com/AppImage/appimagetool.git && \
   cd appimagetool && \
+  git fetch --depth 1 origin feac85722a75471fe62a3fbb5fe54dbccbc83729 && \
+  git checkout feac85722a75471fe62a3fbb5fe54dbccbc83729 && \
   cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
   make install && \
+  sudo apt install -y libzstd-dev && \
+  sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
   cd .. && rm -rf appimagetool
 
 WORKDIR /home/builder/.local/bin
