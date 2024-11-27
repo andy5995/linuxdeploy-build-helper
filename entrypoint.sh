@@ -3,7 +3,7 @@
 set -e
 
 echo ""
-echo "linuxdeploy Build Helper Container v2.0.1"
+echo "linuxdeploy Build Helper Container v3.0.0"
 echo "https://github.com/andy5995/linuxdeploy-build-helper-container"
 echo ""
 
@@ -26,7 +26,6 @@ fi
 
 usermod -u "$HOSTUID" builder
 groupmod -g "$HOSTGID" builder
-chown -R "$HOSTUID:$HOSTGID" /home/builder
 
 # The docs state to use '-w /workdir when running the container, but switching
 # to builder here will change the directory. Using cd to change back...

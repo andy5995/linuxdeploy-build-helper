@@ -16,6 +16,8 @@ on:
     paths:
     - '.env'
     - 'docker-compose.yml'
+    - 'Dockerfile'
+    - 'entrypoint.sh'
     - '**test.yml'
 
 env:
@@ -24,6 +26,9 @@ env:
 jobs:
   test-rmw:
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_IMAGE: andy5995/linuxdeploy:v3-focal
+      DOCKER_CACHE_DEST: ${{ github.workspace }}/.docker/buildx-cache-${{ matrix.platform }}
     strategy:
       matrix:
         platform:
@@ -44,21 +49,69 @@ jobs:
             echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
 
-      - name: Install docker-compose
-        run: |
-          #sudo apt update
-          #sudo apt upgrade -y
-          sudo apt install -y docker-compose
-
-      - name: Checkout rmw
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           path: _linuxdeploy_test
+          fetch-depth: 0
+
+      - name: Check if Dockerfile or entrypoint.sh has changed
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/trunk" ]; then
+            cd _linuxdeploy_test
+            FILES=$(git log -1 -p ./ | grep +++ | cut -d '/' -f 2-| sed -e 's|dev/null||g')
+            if echo "$FILES" | grep -qE "^(Dockerfile)$"; then
+              echo "do_build=true" >> $GITHUB_ENV
+            else
+              echo "do_build=false" >> $GITHUB_ENV
+            fi
+          else
+            # If there was a push to trunk, we don't want the docker build
+            # to run. All the builds in docker.yml will be pushed when *that*
+            # workflow runs, so we really don't want to be adding extra builds
+            # that won't become "permanent".
+            # Theoretically, if a new Dockerfile is pushed to master, it should
+            # already have been tested anyway.
+            #
+            # That may mean the test will fail if the images don't exist yet
+            # in the registry or there was a dramatic change in the Dockerfile
+            # that might break the test that runs via docker compose.
+            # That's ok for now. We'll see how things go...
+            echo "do_build=false" >> $GITHUB_ENV
+          fi
+
+      - name: Cache Docker layers
+        if: ${{ env.do_build == 'true' }}
+        id: docker-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DOCKER_CACHE_DEST }}
+          key: ${{ runner.os }}-docker-${{ matrix.platform }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-docker-${{ matrix.platform }}-
+            ${{ runner.os }}-docker-
+
+      - name: Set up Docker Buildx
+        if: ${{ env.do_build == 'true' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        if: ${{ env.do_build == 'true' }}
+        run: |
+          cd _linuxdeploy_test
+          docker buildx build \
+            . \
+            -t $REGISTRY_IMAGE \
+            --platform=${{ matrix.platform }} \
+            --build-arg CODENAME=focal \
+            --cache-to=type=local,dest=${{ env.DOCKER_CACHE_DEST }} \
+            --cache-from=type=local,src=${{ env.DOCKER_CACHE_DEST }} \
+            --load
 
       - name: Build AppImage
         run: |
           export HOSTUID=$(id -u) HOSTGID=$(id -g)
-          docker-compose -f _linuxdeploy_test/docker-compose.yml run --rm build
+          docker compose -f _linuxdeploy_test/docker-compose.yml run --rm build
         env:
           SCRIPT: 'packaging/appimage/pre-appimage.sh'
           PLATFORM: ${{ matrix.platform }}

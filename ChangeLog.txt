@@ -1,6 +1,12 @@
+2024-11-26
+
+  * Migrate appimagetool (replace AppImageKit with type2runtime)
+    https://github.com/AppImage/type2-runtime
+
 2024-11-23
 
-  * Improve (and fix) entrypoint.sh
+  * Improve (and fix) entrypoint.sh;
+    Breaking change: HOSTGID now needs to be set.
 
 2024-02-12
 

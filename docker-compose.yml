@@ -4,11 +4,10 @@ services:
       HOSTUID: ${HOSTUID}
       HOSTGID: ${HOSTGID}
       VERSION: ${VERSION}
-    image: andy5995/linuxdeploy:v2-focal
+    image: andy5995/linuxdeploy:v3-focal
     platform: ${PLATFORM:-linux/amd64}
     entrypoint: $ENTRYPOINT
     volumes:
       - $PWD:$WORKSPACE
     working_dir: $WORKSPACE
     command: $SCRIPT
-    restart: "no"
