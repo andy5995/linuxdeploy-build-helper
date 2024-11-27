@@ -64,7 +64,7 @@ RUN \
 
 USER builder
 
-ARG CMAKE_VER=3.28.6
+ARG CMAKE_VER=3.30.5
 RUN \
   curl -LO https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER.tar.gz && \
   tar xvf cmake-$CMAKE_VER.tar.gz && \
