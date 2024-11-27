@@ -87,6 +87,7 @@ jobs:
           docker buildx build \
             . \
             -t $REGISTRY_IMAGE \
+            --platform=${{ matrix.platform }} \
             --build-arg CODENAME=focal \
             --cache-to=type=local,dest=${{ env.DOCKER_CACHE_DEST }} \
             --cache-from=type=local,src=${{ env.DOCKER_CACHE_DEST }} \
