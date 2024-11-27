@@ -61,9 +61,9 @@ jobs:
             cd _linuxdeploy_test
             FILES=$(git log -1 -p ./ | grep +++ | cut -d '/' -f 2-| sed -e 's|dev/null||g')
             if echo "$FILES" | grep -qE "^(Dockerfile)$"; then
-              echo "changed=true" >> $GITHUB_ENV
+              echo "do_build=true" >> $GITHUB_ENV
             else
-              echo "changed=false" >> $GITHUB_ENV
+              echo "do_build=false" >> $GITHUB_ENV
             fi
           else
             # If there was a push to trunk, we don't want the docker build
@@ -77,11 +77,11 @@ jobs:
             # in the registry or there was a dramatic change in the Dockerfile
             # that might break the test that runs via docker compose.
             # That's ok for now. We'll see how things go...
-            echo "changed=false" >> $GITHUB_ENV
+            echo "do_build=false" >> $GITHUB_ENV
           fi
 
       - name: Cache Docker layers
-        if: ${{ env.changed == 'true' }}
+        if: ${{ env.do_build == 'true' }}
         id: docker-cache
         uses: actions/cache@v3
         with:
@@ -92,11 +92,11 @@ jobs:
             ${{ runner.os }}-docker-
 
       - name: Set up Docker Buildx
-        if: ${{ env.changed == 'true' }}
+        if: ${{ env.do_build == 'true' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        if: ${{ env.changed == 'true' }}
+        if: ${{ env.do_build == 'true' }}
         run: |
           cd _linuxdeploy_test
           docker buildx build \
