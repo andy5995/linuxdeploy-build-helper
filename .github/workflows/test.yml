@@ -57,11 +57,26 @@ jobs:
 
       - name: Check if Dockerfile or entrypoint.sh has changed
         run: |
-          cd _linuxdeploy_test
-          FILES=$(git log -1 -p ./ | grep +++ | cut -d '/' -f 2-| sed -e 's|dev/null||g')
-          if echo "$FILES" | grep -qE "^(Dockerfile)$"; then
-            echo "changed=true" >> $GITHUB_ENV
+          if [ "${{ github.ref }}" != "refs/heads/trunk" ]; then
+            cd _linuxdeploy_test
+            FILES=$(git log -1 -p ./ | grep +++ | cut -d '/' -f 2-| sed -e 's|dev/null||g')
+            if echo "$FILES" | grep -qE "^(Dockerfile)$"; then
+              echo "changed=true" >> $GITHUB_ENV
+            else
+              echo "changed=false" >> $GITHUB_ENV
+            fi
           else
+            # If there was a push to trunk, we don't want the docker build
+            # to run. All the builds in docker.yml will be pushed when *that*
+            # workflow runs, so we really don't want to be adding extra builds
+            # that won't become "permanent".
+            # Theoretically, if a new Dockerfile is pushed to master, it should
+            # already have been tested anyway.
+            #
+            # That may mean the test will fail if the images don't exist yet
+            # in the registry or there was a dramatic change in the Dockerfile
+            # that might break the test that runs via docker compose.
+            # That's ok for now. We'll see how things go...
             echo "changed=false" >> $GITHUB_ENV
           fi
 
