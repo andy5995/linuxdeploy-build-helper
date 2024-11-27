@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY_IMAGE: andy5995/linuxdeploy:v3-focal
+      DOCKER_CACHE_DEST: ${{ github.workspace }}/.docker/buildx-cache-${{ matrix.platform }}
     strategy:
       matrix:
         platform:
@@ -64,30 +65,36 @@ jobs:
             echo "changed=false" >> $GITHUB_ENV
           fi
 
+      - name: Cache Docker layers
+        if: ${{ env.changed == 'true' }}
+        id: docker-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DOCKER_CACHE_DEST }}
+          key: ${{ runner.os }}-docker-${{ matrix.platform }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-docker-${{ matrix.platform }}-
+            ${{ runner.os }}-docker-
+
       - name: Set up Docker Buildx
         if: ${{ env.changed == 'true' }}
         uses: docker/setup-buildx-action@v3
+
       - name: Build Docker image
         if: ${{ env.changed == 'true' }}
-        uses: docker/build-push-action@v6
-        with:
-          context: ./_linuxdeploy_test
-          file: ./_linuxdeploy_test/Dockerfile
-          platforms: ${{ matrix.platform }}
-          cache-from: type=gha
-          cache-to: type=gha
-          tags: ${{ env.REGISTRY_IMAGE }}
-
-      - name: Install docker-compose
         run: |
-          #sudo apt update
-          #sudo apt upgrade -y
-          sudo apt install -y docker-compose
+          cd _linuxdeploy_test
+          docker buildx build \
+            . \
+            -t $REGISTRY_IMAGE \
+            --build-arg CODENAME=focal \
+            --cache-to=type=local,dest=${{ env.DOCKER_CACHE_DEST }} \
+            --cache-from=type=local,src=${{ env.DOCKER_CACHE_DEST }}
 
       - name: Build AppImage
         run: |
           export HOSTUID=$(id -u) HOSTGID=$(id -g)
-          docker-compose -f _linuxdeploy_test/docker-compose.yml run --rm build
+          docker compose -f _linuxdeploy_test/docker-compose.yml run --rm build
         env:
           SCRIPT: 'packaging/appimage/pre-appimage.sh'
           PLATFORM: ${{ matrix.platform }}

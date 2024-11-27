@@ -32,7 +32,7 @@ RUN \
     xxd && \
     update-ca-certificates -f
 
-# Cmake dependencies
+# Cmake Dependencies
 RUN \
   apt install -y \
     librhash-dev \
