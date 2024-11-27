@@ -89,7 +89,8 @@ jobs:
             -t $REGISTRY_IMAGE \
             --build-arg CODENAME=focal \
             --cache-to=type=local,dest=${{ env.DOCKER_CACHE_DEST }} \
-            --cache-from=type=local,src=${{ env.DOCKER_CACHE_DEST }}
+            --cache-from=type=local,src=${{ env.DOCKER_CACHE_DEST }} \
+            --load
 
       - name: Build AppImage
         run: |
