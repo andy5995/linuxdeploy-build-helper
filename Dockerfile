@@ -162,7 +162,6 @@ RUN \
   cd .. && rm -rf linuxdeploy-plugin-qt
 
 ENV DOCKER_BUILD=TRUE
-
 USER root
 WORKDIR /
 ADD entrypoint.sh /entrypoint.sh
