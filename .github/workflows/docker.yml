@@ -18,128 +18,8 @@ env:
   REGISTRY_IMAGE: andy5995/linuxdeploy
 
 jobs:
-  build-dependencies-image:
-    runs-on: ubuntu-latest
-    name: ${{ matrix.codename }}-${{ matrix.platform }}-dep-image
-    strategy:
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-          - linux/arm/v7
-        codename:
-          - focal
-          - jammy
-      fail-fast: true
-    steps:
-      -
-        name: Prepare
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-      -
-        name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      -
-        name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-
-      - if: ${{ matrix.platform != 'linux/amd64' }}
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.UNCLE_ANDY_DOCKERHUB_ACCESS_TOKEN }}
-      -
-        name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          build-args: CODENAME=${{ matrix.codename }}
-          file: ./dependencies.dockerfile
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-dep-buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-dep-buildcache,mode=max
-
-      -
-        name: Export digest
-        run: |
-          mkdir -p /tmp/dep-digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/dep-digests/${digest#sha256:}"
-
-      -
-        name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: dep-digests-${{ matrix.codename}}-${{ env.PLATFORM_PAIR }}
-          path: /tmp/dep-digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  merge-dependencies-image:
-    runs-on: ubuntu-latest
-    needs:
-      - build-dependencies-image
-    strategy:
-      matrix:
-        codename:
-          - focal
-          - jammy
-      fail-fast: true
-    steps:
-      -
-        name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/dep-digests
-          pattern: dep-digests-${{ matrix.codename }}-*
-          merge-multiple: true
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      -
-        name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: type=raw,value=dependencies-${{ matrix.codename }}-latest
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.UNCLE_ANDY_DOCKERHUB_ACCESS_TOKEN }}
-      -
-        name: Create manifest list and push
-        working-directory: /tmp/dep-digests
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      -
-        name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
-
   build:
     runs-on: ubuntu-latest
-    needs:
-      - merge-dependencies-image
     name: ${{ matrix.codename }}-${{ matrix.platform }}-image
     strategy:
       matrix:
@@ -153,18 +33,13 @@ jobs:
 
       fail-fast: false
     steps:
-      -
-        name: Prepare
+      - name: Prepare
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: true
-      -
-        name: Docker meta
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -173,17 +48,14 @@ jobs:
       - if: ${{ matrix.platform != 'linux/amd64' }}
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Login to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.UNCLE_ANDY_DOCKERHUB_ACCESS_TOKEN }}
-      -
-        name: Build and push by digest
+      - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -195,14 +67,12 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-buildcache,mode=max
-      -
-        name: Export digest
+      - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-      -
-        name: Upload digest
+      - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}
@@ -213,7 +83,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     env:
-      VERSION: v2
+      VERSION: v3
     needs:
       - build
     strategy:
@@ -224,37 +94,31 @@ jobs:
       fail-fast: true
 
     steps:
-      -
-        name: Download digests
+      - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
           pattern: digests-${{ matrix.codename }}-*
           merge-multiple: true
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Docker meta
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=raw,value=${{ env.VERSION }}-${{ matrix.codename }}
-      -
-        name: Login to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.UNCLE_ANDY_DOCKERHUB_ACCESS_TOKEN }}
-      -
-        name: Create manifest list and push
+      - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      -
-        name: Inspect image
+      - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}

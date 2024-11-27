@@ -16,6 +16,8 @@ on:
     paths:
     - '.env'
     - 'docker-compose.yml'
+    - 'Dockerfile'
+    - 'entrypoint.sh'
     - '**test.yml'
 
 env:
@@ -24,6 +26,8 @@ env:
 jobs:
   test-rmw:
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_IMAGE: andy5995/linuxdeploy:v3-focal
     strategy:
       matrix:
         platform:
@@ -44,16 +48,41 @@ jobs:
             echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: _linuxdeploy_test
+          fetch-depth: 0
+
+      - name: Check if Dockerfile or entrypoint.sh has changed
+        run: |
+          cd _linuxdeploy_test
+          FILES=$(git log -1 -p ./ | grep +++ | cut -d '/' -f 2-| sed -e 's|dev/null||g')
+          if echo "$FILES" | grep -qE "^(Dockerfile)$"; then
+            echo "changed=true" >> $GITHUB_ENV
+          else
+            echo "changed=false" >> $GITHUB_ENV
+          fi
+
+      - name: Set up Docker Buildx
+        if: ${{ env.changed == 'true' }}
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        if: ${{ env.changed == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./_linuxdeploy_test
+          file: ./_linuxdeploy_test/Dockerfile
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha
+          cache-to: type=gha
+          tags: ${{ env.REGISTRY_IMAGE }}
+
       - name: Install docker-compose
         run: |
           #sudo apt update
           #sudo apt upgrade -y
           sudo apt install -y docker-compose
-
-      - name: Checkout rmw
-        uses: actions/checkout@v4
-        with:
-          path: _linuxdeploy_test
 
       - name: Build AppImage
         run: |
