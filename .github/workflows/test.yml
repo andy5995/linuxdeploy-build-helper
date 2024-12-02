@@ -83,7 +83,7 @@ jobs:
       - name: Cache Docker layers
         if: ${{ env.do_build == 'true' }}
         id: docker-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.DOCKER_CACHE_DEST }}
           key: ${{ runner.os }}-docker-${{ matrix.platform }}-${{ github.ref_name }}
