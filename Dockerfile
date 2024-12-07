@@ -96,20 +96,27 @@ RUN \
       -DCMAKE_INSTALL_PREFIX=$HOME/.local \
       -DBUILD_TESTING=OFF \
       -DINSTALL_GTEST=OFF \
-      -DBUILD_GMOCK=OFF && \
+      -DBUILD_GMOCK=OFF \
+      -DCMAKE_BUILD_TYPE=Release && \
     ninja && ninja install linuxdeploy && cd .. && \
     rm -rf linuxdeploy
 RUN \
   git clone --depth 1 --branch 1-alpha-20230713-1 https://github.com/linuxdeploy/linuxdeploy-plugin-appimage --recurse-submodules && \
     cd linuxdeploy-plugin-appimage && \
-    cmake . -G Ninja -DCMAKE_INSTALL_PREFIX=$HOME/.local && ninja && ninja install && cd .. && \
+    cmake . \
+      -G Ninja \
+      -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+      -DCMAKE_BUILD_TYPE=Release && \
+    ninja && ninja install && cd .. && \
     rm -rf linuxdeploy-plugin-appimage
 
 ARG CODENAME
 RUN \
   git clone --depth 1 --branch continuous https://github.com/AppImage/appimagetool.git && \
   cd appimagetool && \
-  cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
+  cmake . \
+    -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+    -DCMAKE_BUILD_TYPE=Release && \
   make install && \
   sudo apt install -y libzstd-dev && \
   sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
