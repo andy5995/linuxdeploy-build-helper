@@ -6,13 +6,13 @@ concurrency:
 on:
   workflow_dispatch:
   push:
-    branches: trunk
+    branches: v2
     paths:
     - '.env'
     - 'docker-compose.yml'
     - '**test.yml'
   pull_request:
-    branches: trunk
+    branches: v2
     paths:
     - '.env'
     - 'docker-compose.yml'

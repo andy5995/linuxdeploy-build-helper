@@ -5,14 +5,14 @@ concurrency:
 
 on:
   push:
-    branches: trunk
+    branches: v2
     paths:
     - 'entrypoint.sh'
     - 'Dockerfile'
     - '**workflows/docker.yml'
   workflow_dispatch:
   schedule:
-    - cron: '30 11 20 * *'
+    - cron: '30 11 23 * *'
 
 env:
   REGISTRY_IMAGE: andy5995/linuxdeploy
