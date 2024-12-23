@@ -16,6 +16,7 @@ on:
 
 env:
   REGISTRY_IMAGE: andy5995/linuxdeploy
+  VERSION: v2
 
 jobs:
   build-dependencies-image:
@@ -193,8 +194,8 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-${{ env.VERSION }}-buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE }}:${{ matrix.codename }}-${{ env.PLATFORM_PAIR }}-${{ env.VERSION }}-buildcache,mode=max
       -
         name: Export digest
         run: |
@@ -212,8 +213,6 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
-    env:
-      VERSION: v2
     needs:
       - build
     strategy:
