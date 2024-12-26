@@ -15,6 +15,7 @@ RUN \
     gpg \
     git \
     libcairo-dev \
+    libcurl4-gnutls-dev \
     libfuse2 \
     libfuse-dev \
     libgcrypt-dev \
@@ -24,6 +25,7 @@ RUN \
     libpng-dev \
     libssl-dev \
     libtool \
+    libzstd-dev \
     patchelf \
     python3-pip \
     sudo \
@@ -50,11 +52,12 @@ RUN \
   test -f /usr/share/doc/kitware-archive-keyring/copyright || \
   wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
   echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
-  sudo apt-get update && \
+  sudo apt update && \
   sudo apt install -y kitware-archive-keyring && \
   echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME-rc main" | sudo tee -a /etc/apt/sources.list.d/kitware.list >/dev/null && \
   sudo apt update && \
-  sudo apt install -y cmake
+  sudo apt install -y cmake && \
+  sudo rm -rf /var/lib/apt/lists
 
 # So pip will not report about the path...
 ENV PATH=/home/builder/.local/bin:$PATH
@@ -77,7 +80,6 @@ RUN \
     ninja && ninja install linuxdeploy && cd .. && \
     rm -rf linuxdeploy
 RUN \
-  sudo apt install -y libcurl4-gnutls-dev && \
   git clone --depth 1 --branch 1-alpha-20230713-1 https://github.com/linuxdeploy/linuxdeploy-plugin-appimage --recurse-submodules && \
     cd linuxdeploy-plugin-appimage && \
     cmake . -G Ninja -DCMAKE_INSTALL_PREFIX=$HOME/.local && ninja && ninja install && cd .. && \
@@ -91,7 +93,6 @@ RUN \
   git checkout feac85722a75471fe62a3fbb5fe54dbccbc83729 && \
   cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
   make install && \
-  sudo apt install -y libzstd-dev && \
   sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
   sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
   cd .. && rm -rf appimagetool
@@ -104,6 +105,7 @@ RUN \
 USER root
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
+  apt update && \
   if [ "$CODENAME" = "focal" ];then \
     apt install -y \
       libgtk2.0-dev \
@@ -116,7 +118,8 @@ RUN \
       libgtk-3-dev \
       nlohmann-json3-dev \
       qtbase5-dev; \
-  fi
+  fi && \
+  rm -rf /var/lib/apt/lists
 
 USER builder
 WORKDIR /home/builder
