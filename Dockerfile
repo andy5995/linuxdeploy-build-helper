@@ -3,7 +3,7 @@ FROM ubuntu:$CODENAME
 ARG CODENAME=focal
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
-  apt update && apt upgrade -y && apt install -y \
+  apt update && apt upgrade -y && apt install --no-install-recommends -y \
     autoconf \
     automake \
     build-essential \
@@ -113,7 +113,7 @@ RUN \
       nlohmann-json3-dev \
       qt5-default;  \
   else \
-    apt install -y \
+    apt install --no-install-recommends -y \
       libgtk2.0-dev \
       libgtk-3-dev \
       nlohmann-json3-dev \
