@@ -92,9 +92,9 @@ details on why I chose that version of Ubuntu.
 
 Some 'GITHUB_...' variables will not work inside the container.
 
-Recent versions of cmake, meson, and ninja are installed to
-'/home/builder/.local/bin' which is the first path in PATH (installing them
-with `apt` will probably offer no benefit).
+Recent versions of meson and ninja are installed to '/home/builder/.local/bin'
+which is the first path in PATH (installing them with `apt` will probably
+offer no benefit).
 
 If you want to see more details about the container or what packages are
 pre-installed, look at the two Dockerfiles in this repository. If you'd like

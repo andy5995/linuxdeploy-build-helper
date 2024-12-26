@@ -17,6 +17,7 @@ RUN \
     ninja && ninja install linuxdeploy && cd .. && \
     rm -rf linuxdeploy
 RUN \
+  sudo apt install -y libcurl4-gnutls-dev && \
   git clone --depth 1 --branch 1-alpha-20230713-1 https://github.com/linuxdeploy/linuxdeploy-plugin-appimage --recurse-submodules && \
     cd linuxdeploy-plugin-appimage && \
     cmake . -G Ninja -DCMAKE_INSTALL_PREFIX=$HOME/.local && ninja && ninja install && cd .. && \
@@ -43,7 +44,6 @@ RUN \
 USER root
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
-  apt update && apt upgrade -y && \
   if [ "$CODENAME" = "focal" ];then \
     apt install -y \
       libgtk2.0-dev \
