@@ -1,6 +1,6 @@
 ARG CODENAME=focal
 FROM ubuntu:$CODENAME
-ARG CODENAME=$CODENAME
+ARG CODENAME=focal
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
@@ -16,6 +16,7 @@ RUN \
     gpg \
     git \
     libcairo-dev \
+    libcurl4-gnutls-dev \
     libfuse2 \
     libfuse-dev \
     libgcrypt-dev \
@@ -25,31 +26,14 @@ RUN \
     libpng-dev \
     libssl-dev \
     libtool \
+    libzstd-dev \
     patchelf \
     python3-pip \
     sudo \
     wget \
     xxd && \
-    update-ca-certificates -f
-
-# Cmake Dependencies
-RUN \
-  apt install -y \
-    librhash-dev \
-    libcurl4-openssl-dev \
-    libarchive-dev \
-    libjsoncpp-dev \
-    libuv1-dev
-
-# https://apt.kitware.com/
-# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED
-# RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-# RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
-# RUN apt update  && \
-#  apt-get install kitware-archive-keyring && \
-#  apt install -y cmake
-# The following signatures couldn't be verified because the public key is not
-# available: NO_PUBKEY 1A127079A92F09ED
+  update-ca-certificates -f && \
+  rm -rf /var/lib/apt/lists
 
 RUN useradd -m builder && passwd -d builder
 RUN echo "builder ALL=(ALL) ALL" >> /etc/sudoers
@@ -63,19 +47,47 @@ RUN \
   rm -rf CImg
 
 USER builder
+ARG TARGETVARIANT
 
-ARG CMAKE_VER=3.30.5
 RUN \
-  curl -LO https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER.tar.gz && \
-  tar xvf cmake-$CMAKE_VER.tar.gz && \
-  cd cmake-$CMAKE_VER && \
-  ./bootstrap \
-    --prefix=/home/builder/.local \
-    --system-libs \
-    --no-system-cppdap \
-    --parallel=$(nproc) && \
-  make -j $(nproc) && make install && \
-  cd .. && rm -rf cmake-"$CMAKE_VER"*
+  export CODENAME=$CODENAME && \
+  # on arm/v7:
+  # focal InRelease: The following signatures couldn't be verified because
+  # the public key is not available: NO_PUBKEY 1A127079A92F09ED
+  if [ "$TARGETVARIANT" = "v7" ] && [ "$CODENAME" = "focal" ]; then \
+    sudo apt update && sudo apt install --no-install-recommends -y \
+      librhash-dev \
+      libarchive-dev \
+      libjsoncpp-dev \
+      libuv1-dev && \
+    CMAKE_VER=3.31.2 && \
+    curl -LO https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER.tar.gz && \
+    tar xvf cmake-$CMAKE_VER.tar.gz && \
+    cd cmake-$CMAKE_VER && \
+    ./bootstrap \
+      --prefix=/home/builder/.local \
+      --system-libs \
+      --no-system-cppdap \
+      --parallel=$(nproc) && \
+    make -j $(nproc) && make install && \
+    cd .. && rm -rf cmake-"$CMAKE_VER" && \
+    sudo apt remove -y \
+      librhash-dev \
+      libarchive-dev \
+      libjsoncpp-dev \
+      libuv1-dev && \
+    rm -rf /var/lib/apt/lists; \
+  else \
+    test -f /usr/share/doc/kitware-archive-keyring/copyright || \
+    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+    sudo apt update && \
+    sudo apt install -y kitware-archive-keyring && \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME-rc main" | sudo tee -a /etc/apt/sources.list.d/kitware.list >/dev/null && \
+    sudo apt update && \
+    sudo apt install -y cmake && \
+    sudo rm -rf /var/lib/apt/lists; \
+  fi
 
 # So pip will not report about the path...
 ENV PATH=/home/builder/.local/bin:$PATH
@@ -118,7 +130,6 @@ RUN \
     -DCMAKE_INSTALL_PREFIX=$HOME/.local \
     -DCMAKE_BUILD_TYPE=Release && \
   make install && \
-  sudo apt install --no-install-recommends -y libzstd-dev && \
   sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
   sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
   cd .. && rm -rf appimagetool
@@ -144,7 +155,8 @@ RUN \
       libgtk-3-dev \
       nlohmann-json3-dev \
       qtbase5-dev; \
-  fi
+  fi && \
+  rm -rf /var/lib/apt/lists
 
 USER builder
 WORKDIR /home/builder
