@@ -14,10 +14,7 @@ if [ -z "$HOSTUID" ]; then
   exit 1
 fi
 
-if [ -z "$HOSTGID" ]; then
-  echo "HOSTGID is not set."
-  exit 1
-fi
+export HOSTGID=${HOSTGID:-$HOSTUID}
 
 if [ -z "$1" ]; then
   echo "One argument required -- the name of a script to run."
