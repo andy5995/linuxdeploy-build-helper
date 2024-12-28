@@ -4,7 +4,7 @@ ARG CODENAME=$CODENAME
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
-  apt update && apt upgrade -y && apt install -y \
+  apt update && apt upgrade -y && apt install --no-install-recommends -y \
     autoconf \
     automake \
     build-essential \
@@ -118,7 +118,7 @@ RUN \
     -DCMAKE_INSTALL_PREFIX=$HOME/.local \
     -DCMAKE_BUILD_TYPE=Release && \
   make install && \
-  sudo apt install -y libzstd-dev && \
+  sudo apt install --no-install-recommends -y libzstd-dev && \
   sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
   sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
   cd .. && rm -rf appimagetool
@@ -131,15 +131,15 @@ RUN \
 USER root
 ARG DEBIAN_FRONTEND=noninteractive
 RUN \
-  apt update && apt upgrade -y && \
+  apt update && \
   if [ "$CODENAME" = "focal" ];then \
-    apt install -y \
+    apt install --no-install-recommends -y \
       libgtk2.0-dev \
       libgtk-3-dev \
       nlohmann-json3-dev \
       qt5-default;  \
   else \
-    apt install -y \
+    apt install --no-install-recommends -y \
       libgtk2.0-dev \
       libgtk-3-dev \
       nlohmann-json3-dev \
