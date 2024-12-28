@@ -25,7 +25,6 @@ RUN \
     libpng-dev \
     libssl-dev \
     libtool \
-    libzstd-dev \
     patchelf \
     python3-pip \
     sudo \
@@ -117,15 +116,18 @@ RUN \
 
 ARG CODENAME
 RUN \
-  git clone --depth 1 --branch main https://github.com/AppImage/appimagetool.git && \
-  cd appimagetool && \
-  git fetch --depth 1 origin feac85722a75471fe62a3fbb5fe54dbccbc83729 && \
-  git checkout feac85722a75471fe62a3fbb5fe54dbccbc83729 && \
-  cmake . -DCMAKE_INSTALL_PREFIX=$HOME/.local && \
-  make install && \
-  sed -i 's@wget https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz -qO - | tar xvz --strip-components=1@curl -sL https://github.com/plougher/squashfs-tools/archive/refs/tags/"$version".tar.gz | tar xvz --strip-components=1@' ci/install-static-mksquashfs.sh && \
-  sudo bash -euxo pipefail ci/install-static-mksquashfs.sh 4.6.1 && \
-  cd .. && rm -rf appimagetool
+  git clone --depth 1 --branch 13 https://github.com/AppImage/AppImageKit --recurse-submodules && \
+  cd AppImageKit && \
+  sed -i 's/4\.4/4.5/g' cmake/dependencies.cmake && \
+  cmake . \
+    -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+    -DBUILD_TESTING=OFF && \
+  if [ "$CODENAME" = "jammy" ];then \
+    make -j $(nproc) || sleep 5s && make clean; \
+    sed -i 's/CPPFLAGS="\(.*\)"/CPPFLAGS="\1 -fcommon"/' ./lib/libappimage/squashfuse-EXTERNAL-prefix/src/squashfuse-EXTERNAL/m4/squashfuse.m4; \
+  fi && \
+  make -j $(nproc) && make install && \
+  cd .. && rm -rf AppImageKit
 
 WORKDIR /home/builder/.local/bin
 RUN \
