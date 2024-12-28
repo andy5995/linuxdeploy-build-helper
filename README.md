@@ -4,9 +4,9 @@ A docker container that aims to help build an
 [AppImage](https://github.com/AppImage/AppImageKit) on multiple architectures
 using [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy).
 
-Latest version: v2-focal
+Latest version: v3-focal
 
-v2-jammy is also available if for some reason you require a more recent
+v3-jammy is also available if for some reason you require a more recent
 version Ubuntu.
 
 ## Available architectures
@@ -48,7 +48,7 @@ You may use `sudo` in your script to install packages or do other things.
 
 If you would like to look around the container, you can use
 
-    docker run -it --rm --entrypoint bash andy5995/linuxdeploy:v2-focal
+    docker run -it --rm --entrypoint bash andy5995/linuxdeploy:v3-focal
 
 ## Locally
 
