@@ -6,7 +6,6 @@ services:
       VERSION: ${VERSION}
     image: andy5995/linuxdeploy:v2-focal
     platform: ${PLATFORM:-linux/amd64}
-    entrypoint: $ENTRYPOINT
     volumes:
       - $PWD:$WORKSPACE
     working_dir: $WORKSPACE
