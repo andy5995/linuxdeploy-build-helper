@@ -57,7 +57,7 @@ jobs:
 
       - name: Build AppImage
         run: |
-          export HOSTUID=$(id -u) HOSTGID=$(id -g)
+          export HOSTUID=$(id -u)
           docker-compose -f _linuxdeploy_test/docker-compose.yml run --rm build
         env:
           SCRIPT: 'packaging/appimage/pre-appimage.sh'
