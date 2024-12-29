@@ -13,9 +13,6 @@ version Ubuntu.
 
     amd64
     arm64
-    arm/v7
-
-(The appimage plugin doesn't yet support 'ppc64le' or 's390x')
 
 ## Usage
 

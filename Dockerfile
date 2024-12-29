@@ -47,62 +47,30 @@ RUN \
   rm -rf CImg
 
 USER builder
-ARG TARGETVARIANT
 
 RUN \
   export CODENAME=$CODENAME && \
-  # on arm/v7:
-  # focal InRelease: The following signatures couldn't be verified because
-  # the public key is not available: NO_PUBKEY 1A127079A92F09ED
-  if [ "$TARGETVARIANT" = "v7" ] && [ "$CODENAME" = "focal" ]; then \
-    sudo apt update && sudo apt install --no-install-recommends -y \
-      librhash-dev \
-      libarchive-dev \
-      libjsoncpp-dev \
-      libuv1-dev && \
-    CMAKE_VER=3.31.2 && \
-    curl -LO https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER.tar.gz && \
-    tar xvf cmake-$CMAKE_VER.tar.gz && \
-    cd cmake-$CMAKE_VER && \
-    ./bootstrap \
-      --prefix=/home/builder/.local \
-      --system-libs \
-      --no-system-cppdap \
-      --parallel=$(nproc) && \
-    make -j $(nproc) && make install && \
-    cd .. && rm -rf cmake-"$CMAKE_VER" && \
-    sudo apt remove -y \
-      librhash-dev \
-      libarchive-dev \
-      libjsoncpp-dev \
-      libuv1-dev && \
-    rm -rf /var/lib/apt/lists; \
-  else \
-    test -f /usr/share/doc/kitware-archive-keyring/copyright || \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
-    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
-    sudo apt update && \
-    sudo apt install -y kitware-archive-keyring && \
-    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME-rc main" | sudo tee -a /etc/apt/sources.list.d/kitware.list >/dev/null && \
-    sudo apt update && \
-    sudo apt install -y cmake && \
-    sudo rm -rf /var/lib/apt/lists; \
-  fi
+  test -f /usr/share/doc/kitware-archive-keyring/copyright || \
+  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+  echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+  sudo apt update && \
+  sudo apt install -y kitware-archive-keyring && \
+  echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME-rc main" | sudo tee -a /etc/apt/sources.list.d/kitware.list >/dev/null && \
+  sudo apt update && \
+  sudo apt install -y cmake && \
+  sudo rm -rf /var/lib/apt/lists
 
 # So pip will not report about the path...
 ENV PATH=/home/builder/.local/bin:$PATH
-RUN python3 -m pip install pip --upgrade --user
-
-# On arm/v7, pip can't install cmake from source, which is needed to build ninja
-RUN python3 -m pip install meson ninja --upgrade --user
+RUN \
+  python3 -m pip install pip --upgrade --user && \
+  python3 -m pip install meson ninja --upgrade --user
 
 WORKDIR /home/builder
 
 RUN \
   git clone --depth 1 --branch 2.0.0-alpha-1-20241106 https://github.com/linuxdeploy/linuxdeploy --recurse-submodules && \
     cd linuxdeploy && cp src/core/copyright/copyright.h src/core && \
-    # On arm/v7, wget fails if --no-check-certificate isn't used
-    sed -i 's/wget --quiet \"$url\" -O -/curl -o - \"$url\"/g' src/core/generate-excludelist.sh && \
     cmake . \
       -G Ninja \
       -DCMAKE_INSTALL_PREFIX=$HOME/.local \
@@ -167,8 +135,6 @@ RUN \
     https://github.com/linuxdeploy/linuxdeploy-plugin-qt \
     --recurse-submodules && \
   cd linuxdeploy-plugin-qt && \
-  # On arm/v7, wget fails if --no-check-certificate isn't used
-  sed -i 's/wget --quiet \"$url\" -O -/curl -o - \"$url\"/g' lib/linuxdeploy/src/core/generate-excludelist.sh && \
   cmake . \
     -G Ninja \
     -DBUILD_GMOCK=OFF \
