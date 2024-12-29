@@ -72,7 +72,7 @@ variable.
 
 ## In a GitHub Runner
 
-See [tests.yml](https://github.com/andy5995/linuxdeploy-build-helper-container/blob/trunk/.github/workflows/test.yml)
+See [test.yml](https://github.com/andy5995/linuxdeploy-build-helper-container/blob/trunk/.github/workflows/test.yml)
 
 ## linuxdeploy Plugins
 
