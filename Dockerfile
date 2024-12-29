@@ -74,8 +74,7 @@ RUN \
       librhash-dev \
       libarchive-dev \
       libjsoncpp-dev \
-      libuv1-dev && \
-    rm -rf /var/lib/apt/lists; \
+      libuv1-dev; \
   else \
     test -f /usr/share/doc/kitware-archive-keyring/copyright || \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
@@ -84,9 +83,9 @@ RUN \
     sudo apt install -y kitware-archive-keyring && \
     echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $CODENAME-rc main" | sudo tee -a /etc/apt/sources.list.d/kitware.list >/dev/null && \
     sudo apt update && \
-    sudo apt install -y cmake && \
-    sudo rm -rf /var/lib/apt/lists; \
-  fi
+    sudo apt install -y cmake; \
+  fi && \
+  sudo rm -rf /var/lib/apt/lists
 
 # So pip will not report about the path...
 ENV PATH=/home/builder/.local/bin:$PATH
@@ -139,7 +138,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN \
   apt update && \
   if [ "$CODENAME" = "focal" ];then \
-    apt install -y \
+    apt install --no-install-recommends -y \
       libgtk2.0-dev \
       libgtk-3-dev \
       nlohmann-json3-dev \
